@@ -52,68 +52,67 @@ def query_server(
     call_type: str = "unknown",
     round_idx: int = -1,
 ):
-    match server_type:
-        case "local":
-            llm = get_llm(model_name)  # legacy fallback
-            model = model_name
+    if server_type == "local":
+        llm = get_llm(model_name)  # legacy fallback
+        model = model_name
 
-        case "vllm":
-            llm = get_llm(model_name, server_url=f"http://{server_address}:{server_port}/v1")
-            model = model_name
+    elif server_type == "vllm":
+        llm = get_llm(model_name, server_url=f"http://{server_address}:{server_port}/v1")
+        model = model_name
 
-        case "sglang":
-            from openai import OpenAI
-            url = f"http://{server_address}:{server_port}"
-            client = OpenAI(api_key=SGLANG_KEY, base_url=f"{url}/v1", timeout=None, max_retries=0)
-            model = "default"
+    elif server_type == "sglang":
+        from openai import OpenAI
+        url = f"http://{server_address}:{server_port}"
+        client = OpenAI(api_key=SGLANG_KEY, base_url=f"{url}/v1", timeout=None, max_retries=0)
+        model = "default"
 
-        case "deepseek":
-            from openai import OpenAI
-            client = OpenAI(
-                api_key=DEEPSEEK_KEY,
-                base_url="https://api.deepseek.com",
-                timeout=10000000,
-                max_retries=3,
-            )
-            model = model_name
+    elif server_type == "deepseek":
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=DEEPSEEK_KEY,
+            base_url="https://api.deepseek.com",
+            timeout=10000000,
+            max_retries=3,
+        )
+        model = model_name
 
-        case "fireworks":
-            from openai import OpenAI
-            client = OpenAI(
-                api_key=FIREWORKS_API_KEY,
-                base_url="https://api.fireworks.ai/inference/v1",
-                timeout=10000000,
-                max_retries=3,
-            )
-            model = model_name
+    elif server_type == "fireworks":
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=FIREWORKS_API_KEY,
+            base_url="https://api.fireworks.ai/inference/v1",
+            timeout=10000000,
+            max_retries=3,
+        )
+        model = model_name
 
-        case "anthropic":
-            import anthropic
-            client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-            model = model_name
+    elif server_type == "anthropic":
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        model = model_name
 
-        case "google":
-            import google.generativeai as genai
-            genai.configure(api_key=GEMINI_KEY)
-            model = model_name
+    elif server_type == "google":
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_KEY)
+        model = model_name
 
-        case "together":
-            from together import Together
-            client = Together(api_key=TOGETHER_KEY)
-            model = model_name
+    elif server_type == "together":
+        from together import Together
+        client = Together(api_key=TOGETHER_KEY)
+        model = model_name
 
-        case "sambanova":
-            from openai import OpenAI
-            client = OpenAI(api_key=SAMBANOVA_API_KEY, base_url="https://api.sambanova.ai/v1")
-            model = model_name
+    elif server_type == "sambanova":
+        from openai import OpenAI
+        client = OpenAI(api_key=SAMBANOVA_API_KEY, base_url="https://api.sambanova.ai/v1")
+        model = model_name
 
-        case "openai":
-            from openai import OpenAI
-            client = OpenAI(api_key=OPENAI_KEY)
-            model = model_name
+    elif server_type == "openai":
+        from openai import OpenAI
+        client = OpenAI(api_key=OPENAI_KEY)
+        model = model_name
 
-        case _:
-            raise NotImplementedError(f"Unsupported server_type: {server_type}")
+    else:
+        raise NotImplementedError(f"Unsupported server_type: {server_type}")
 
     # ------------------ Local / vLLM --------------------
     if server_type in {"local", "vllm"}:

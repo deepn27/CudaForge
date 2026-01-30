@@ -54,6 +54,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--max_tokens", type=int, default=16384, help="LLM max new tokens")
     p.add_argument("--temperature", type=float, default=0.2, help="LLM temperature")
     p.add_argument("--top_p", type=float, default=1.0, help="LLM top_p")
+    # Anthropic-specific (for reasoning models like Claude)
+    p.add_argument("--budget_tokens", type=int, default=10000, help="Budget tokens for Anthropic reasoning models (default: 10000)")
+    p.add_argument("--is_reasoning_model", action="store_true", help="Enable reasoning mode for Anthropic models")
     # multi-task controls
     p.add_argument("--first_n", type=int, default=0, help="When arch_py is a directory, take the first N tasks (sorted)")
     p.add_argument("--num_tasks", type=int, default=1, help="When sampling, how many tasks to pick (if >0 and first_n=0)")
@@ -152,6 +155,8 @@ def _make_llm_caller(args):
             top_p=args.top_p,
             server_address=args.server_address,
             server_port=args.server_port,
+            budget_tokens=args.budget_tokens,
+            is_reasoning_model=args.is_reasoning_model,
             log_path=str(log_path) if log_path else None,
             call_type=call_type,
             round_idx=round_idx,

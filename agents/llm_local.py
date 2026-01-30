@@ -12,7 +12,7 @@ from typing import Optional
 from openai import OpenAI
 
 # -------------------------------
-@dataclass(slots=True)
+@dataclass
 class GenerationConfig:
     max_new_tokens: int = 1024
     temperature: float = 0.2
