@@ -120,14 +120,23 @@ def profile_bench(
                 cmd.insert(insert_pos, f"--kernel-name=::regex:^({pattern})(\\(|$)")
 
     print("[ncu] running:", " ".join(cmd))
-    proc = subprocess.run(cmd, env=env, text=True, capture_output=True)
+    with open(csv_path, "w", encoding="utf-8") as csv_fh:
+        proc = subprocess.run(cmd, env=env, text=True, stdout=csv_fh, stderr=subprocess.PIPE)
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr or "")
         raise SystemExit(proc.returncode)
 
-    # NCU --csv sends CSV data to stdout; write it to the output file
-    csv_path.write_text(proc.stdout, encoding="utf-8")
-    print(f"[ok] CSV written: {csv_path}")
+    # Diagnostic: check what NCU actually wrote
+    raw = csv_path.read_text(encoding="utf-8")
+    data_lines = [l for l in raw.splitlines() if l and not l.startswith("=")]
+    print(f"[ok] CSV written: {csv_path}  ({len(raw)} bytes, {len(data_lines)} data lines)")
+    if not data_lines:
+        # CSV has no actual data — dump first lines + stderr for diagnostics
+        preview = raw[:2000] if raw else "(empty file)"
+        stderr_preview = (proc.stderr or "")[:1000]
+        print(f"[ncu] WARNING: no CSV data lines found.\n"
+              f"  File preview:\n{preview}\n"
+              f"  stderr preview:\n{stderr_preview}")
     return csv_path
 
 
