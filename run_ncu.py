@@ -111,13 +111,10 @@ def profile_bench(
         names = sorted({k.strip() for k in kernel_names if k and k.strip()})
         if names:
             insert_pos = cmd.index(f"--metrics={METRICS}")
-            if len(names) == 1:
-                # Single name: direct match
-                cmd.insert(insert_pos, f"--kernel-name={names[0]}")
-            else:
-                # Multiple names: merge into a single regex
-                pattern = "|".join(re.escape(k) for k in names)
-                cmd.insert(insert_pos, f"--kernel-name=::regex:^({pattern})(\\(|$)")
+            # Use regex substring match (no anchors) — demangled names may
+            # include return type, namespaces, or template args.
+            pattern = "|".join(re.escape(k) for k in names)
+            cmd.insert(insert_pos, f"--kernel-name=::regex:({pattern})")
 
     print("[ncu] running:", " ".join(cmd))
     with open(csv_path, "w", encoding="utf-8") as csv_fh:
