@@ -101,20 +101,15 @@ def profile_bench(
         "--profile-from-start=on",
         f"--metrics={METRICS}",
         "--launch-skip=0",
-        "--launch-count=20",
+        "--launch-count=100",
         sys.executable, bench_py,
         "--repeat", str(repeat),
     ]
 
-    # Choose insertion strategy based on number of kernel names
-    if kernel_names:
-        names = sorted({k.strip() for k in kernel_names if k and k.strip()})
-        if names:
-            insert_pos = cmd.index(f"--metrics={METRICS}")
-            # Use regex substring match (no anchors) — demangled names may
-            # include return type, namespaces, or template args.
-            pattern = "|".join(re.escape(k) for k in names)
-            cmd.insert(insert_pos, f"--kernel-name=::regex:({pattern})")
+    # NOTE: Do not filter by --kernel-name here. JIT-compiled kernels
+    # (e.g. via torch cpp_extension) get mangled/namespaced names that
+    # won't match the source-level names. Instead, profile all kernels
+    # and let load_ncu_metrics() filter by name_list in post-processing.
 
     print("[ncu] running:", " ".join(cmd))
     with open(csv_path, "w", encoding="utf-8") as csv_fh:
