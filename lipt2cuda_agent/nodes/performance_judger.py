@@ -32,12 +32,9 @@ def performance_judger_node(state: LIPT2CudaAgentState) -> LIPT2CudaAgentState:
 
     args = state["args"]
 
-    # Extract kernel names
-    test_kernel_path = state["test_kernel_path"]
-    with open(test_kernel_path, "r") as f:
-        test_kernel_code = f.read()
-
-    kernel_names = extract_cuda_kernel_names(test_kernel_code)
+    # Extract kernel names                                                                                                                                                                                                                                                           
+    test_kernel_path = state["test_kernel_path"]                                                                                                                                                                                                                                      
+    kernel_names = extract_cuda_kernel_names(test_kernel_path)
     print(f"Detected kernel names: {kernel_names}")
 
     # Profile with NCU
