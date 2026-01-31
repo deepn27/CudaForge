@@ -40,7 +40,8 @@ def performance_judger_node(state: LIPT2CudaAgentState) -> LIPT2CudaAgentState:
     # Profile with NCU
     csv_path = profile_bench(
         bench_py=f"bench_ref_inputs_{args.subproc_id}.py",
-        out_csv=f"ncu_temp_{args.subproc_id}.csv"
+        kernel_names=kernel_names,
+        out_csv=f"ncu_temp_{args.subproc_id}.csv",
     )
 
     # Load metrics

@@ -143,7 +143,14 @@ def load_ncu_metrics(
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
-    df = pd.read_csv(csv_path, comment="=", low_memory=False)
+    try:
+        df = pd.read_csv(csv_path, comment="=", low_memory=False)
+    except pd.errors.EmptyDataError:
+        raise ValueError(
+            f"NCU CSV has no data rows: {csv_path}. "
+            f"No matching kernel launches were captured. "
+            f"Requested kernel names: {name_list}"
+        )
 
     metric_cols = list(columns) if columns is not None else METRIC_COLUMNS
     keep_cols: List[str] = []
