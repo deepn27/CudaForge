@@ -99,36 +99,25 @@ def profile_bench(
         "--target-processes=all",
         "--replay-mode=kernel",
         "--profile-from-start=on",
+        f"--log-file={str(csv_path)}",
         f"--metrics={METRICS}",
         "--launch-skip=0",
-        "--launch-count=100",
+        "--launch-count=20",
         sys.executable, bench_py,
         "--repeat", str(repeat),
     ]
 
-    # NOTE: Do not filter by --kernel-name here. JIT-compiled kernels
-    # (e.g. via torch cpp_extension) get mangled/namespaced names that
-    # won't match the source-level names. Instead, profile all kernels
-    # and let load_ncu_metrics() filter by name_list in post-processing.
+    # NOTE: Do not filter by --kernel-name here. The original working
+    # code never passed kernel_names to profile_bench(). Filtering is
+    # handled in load_ncu_metrics() via the name_list parameter.
 
     print("[ncu] running:", " ".join(cmd))
-    with open(csv_path, "w", encoding="utf-8") as csv_fh:
-        proc = subprocess.run(cmd, env=env, text=True, stdout=csv_fh, stderr=subprocess.PIPE)
+    proc = subprocess.run(cmd, env=env, text=True, capture_output=True)
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr or "")
         raise SystemExit(proc.returncode)
 
-    # Diagnostic: check what NCU actually wrote
-    raw = csv_path.read_text(encoding="utf-8")
-    data_lines = [l for l in raw.splitlines() if l and not l.startswith("=")]
-    print(f"[ok] CSV written: {csv_path}  ({len(raw)} bytes, {len(data_lines)} data lines)")
-    if not data_lines:
-        # CSV has no actual data — dump first lines + stderr for diagnostics
-        preview = raw[:2000] if raw else "(empty file)"
-        stderr_preview = (proc.stderr or "")[:1000]
-        print(f"[ncu] WARNING: no CSV data lines found.\n"
-              f"  File preview:\n{preview}\n"
-              f"  stderr preview:\n{stderr_preview}")
+    print(f"[ok] CSV written: {csv_path}")
     return csv_path
 
 
