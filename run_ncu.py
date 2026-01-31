@@ -99,7 +99,6 @@ def profile_bench(
         "--target-processes=all",
         "--replay-mode=kernel",
         "--profile-from-start=on",
-        f"--log-file={str(csv_path)}",
         f"--metrics={METRICS}",
         "--launch-skip=0",
         "--launch-count=20",
@@ -126,6 +125,8 @@ def profile_bench(
         sys.stderr.write(proc.stderr or "")
         raise SystemExit(proc.returncode)
 
+    # NCU --csv sends CSV data to stdout; write it to the output file
+    csv_path.write_text(proc.stdout, encoding="utf-8")
     print(f"[ok] CSV written: {csv_path}")
     return csv_path
 
