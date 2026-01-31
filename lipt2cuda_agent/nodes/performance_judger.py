@@ -37,10 +37,10 @@ def performance_judger_node(state: LIPT2CudaAgentState) -> LIPT2CudaAgentState:
     kernel_names = extract_cuda_kernel_names(test_kernel_path)
     print(f"Detected kernel names: {kernel_names}")
 
-    # Profile with NCU
+    # Profile with NCU — run the test kernel (contains the CUDA code),
+    # not bench_ref_inputs (which only has the reference PyTorch model).
     csv_path = profile_bench(
-        bench_py=f"bench_ref_inputs_{args.subproc_id}.py",
-        kernel_names=kernel_names,
+        bench_py=str(test_kernel_path),
         out_csv=f"ncu_temp_{args.subproc_id}.csv",
     )
 

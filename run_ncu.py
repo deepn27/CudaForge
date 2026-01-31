@@ -107,41 +107,24 @@ def profile_bench(
         "--repeat", str(repeat),
     ]
 
-    # NOTE: Do not filter by --kernel-name here. The original working
-    # code never passed kernel_names to profile_bench(). Filtering is
-    # handled in load_ncu_metrics() via the name_list parameter.
+    # Choose insertion strategy based on number of kernel names
+    if kernel_names:
+        names = sorted({k.strip() for k in kernel_names if k and k.strip()})
+        if names:
+            insert_pos = cmd.index(f"--metrics={METRICS}")
+            if len(names) == 1:
+                # Single name: direct match
+                cmd.insert(insert_pos, f"--kernel-name={names[0]}")
+            else:
+                # Multiple names: merge into a single regex
+                pattern = "|".join(re.escape(k) for k in names)
+                cmd.insert(insert_pos, f"--kernel-name=::regex:^({pattern})(\\(|$)")
 
     print("[ncu] running:", " ".join(cmd))
     proc = subprocess.run(cmd, env=env, text=True, capture_output=True)
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr or "")
         raise SystemExit(proc.returncode)
-
-    # --log-file behaviour varies across NCU versions: some write CSV
-    # data there, others only write ==PROF== messages and send CSV to
-    # stdout.  Check whether the log-file has real CSV rows; if not,
-    # use stdout instead.
-    def _has_csv_data(path: Path) -> bool:
-        if not path.exists():
-            return False
-        text = path.read_text(encoding="utf-8", errors="replace")
-        return any(l and not l.startswith("=") for l in text.splitlines())
-
-    if not _has_csv_data(csv_path):
-        # stdout likely has the CSV data
-        stdout = proc.stdout or ""
-        if stdout.strip():
-            csv_path.write_text(stdout, encoding="utf-8")
-            print(f"[ncu] log-file had no CSV data; wrote stdout to {csv_path}")
-        else:
-            # Last resort: check stderr (some NCU versions mix output)
-            stderr = proc.stderr or ""
-            csv_lines = [l for l in stderr.splitlines() if l and not l.startswith("=")]
-            if csv_lines:
-                csv_path.write_text("\n".join(csv_lines) + "\n", encoding="utf-8")
-                print(f"[ncu] log-file and stdout empty; extracted {len(csv_lines)} lines from stderr")
-            else:
-                print(f"[ncu] WARNING: no CSV data found in log-file, stdout, or stderr")
 
     print(f"[ok] CSV written: {csv_path}")
     return csv_path
@@ -160,14 +143,7 @@ def load_ncu_metrics(
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV not found: {csv_path}")
 
-    try:
-        df = pd.read_csv(csv_path, comment="=", low_memory=False)
-    except pd.errors.EmptyDataError:
-        raise ValueError(
-            f"NCU CSV has no data rows: {csv_path}. "
-            f"No matching kernel launches were captured. "
-            f"Requested kernel names: {name_list}"
-        )
+    df = pd.read_csv(csv_path, comment="=", low_memory=False)
 
     metric_cols = list(columns) if columns is not None else METRIC_COLUMNS
     keep_cols: List[str] = []
